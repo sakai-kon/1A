@@ -1,0 +1,4 @@
+/* Fix: elements using the HTML hidden attribute must remain hidden even when component CSS sets display. */
+[hidden] {
+  display: none !important;
+}
