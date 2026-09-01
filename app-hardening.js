@@ -7,6 +7,8 @@
   if (typeof AudioEngine !== 'undefined') {
     const originalPlay = AudioEngine.prototype.play;
     const originalHandleTrackEnded = AudioEngine.prototype._handleTrackEnded;
+    const originalReset = AudioEngine.prototype.reset;
+    const originalGetPosition = AudioEngine.prototype.getPosition;
 
     AudioEngine.prototype.play = async function (...args) {
       this._hardeningEndHandled = false;
@@ -28,10 +30,22 @@
       originalHandleTrackEnded.call(this, id);
     };
 
-    const originalReset = AudioEngine.prototype.reset;
     AudioEngine.prototype.reset = function (...args) {
       this._hardeningEndHandled = false;
-      return originalReset.apply(this, args);
+      const result = originalReset.apply(this, args);
+      // ミュート状態が次の曲へ意図せず持ち越されないよう初期状態へ戻す。
+      if (this.masterGain && this.ctx) {
+        this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
+        this.masterGain.gain.setValueAtTime(1, this.ctx.currentTime);
+      }
+      return result;
+    };
+
+    AudioEngine.prototype.getPosition = function (...args) {
+      const position = Number(originalGetPosition.apply(this, args));
+      if (!Number.isFinite(position)) return 0;
+      const duration = Number(this.duration);
+      return duration > 0 ? Math.max(0, Math.min(position, duration)) : 0;
     };
   }
 
