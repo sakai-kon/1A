@@ -49,6 +49,19 @@
     };
   }
 
+  // AudioEngine のミュート状態をリセットした後、プレイヤー側の表示も必ず同期する。
+  if (typeof PlayerController !== 'undefined') {
+    const originalPlayerReset = PlayerController.prototype.reset;
+    PlayerController.prototype.reset = function (...args) {
+      const result = originalPlayerReset.apply(this, args);
+      if (this.els.volumeBtn) {
+        this.els.volumeBtn.textContent = '🔊';
+        this.els.volumeBtn.setAttribute('aria-label', 'ミュート');
+      }
+      return result;
+    };
+  }
+
   // 確認ダイアログを背景クリック / Escape で閉じた場合、Promise を必ず解決する。
   // 元実装のキャンセルボタン経由で閉じるため、削除処理などの待機状態を残さない。
   const getOpenModal = () => document.querySelector('.modal:not([hidden])');
