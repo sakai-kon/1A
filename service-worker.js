@@ -1,6 +1,6 @@
 // service-worker.js — オフラインでも基本機能が使えるようにするためのキャッシュ
-const CACHE_VERSION = 'choir-player-v4';
-const CORE_ASSETS = [
+const CACHE_VERSION = 'choir-player-v5';
+const LOCAL_ASSETS = [
   './',
   './index.html',
   './style.css',
@@ -15,14 +15,23 @@ const CORE_ASSETS = [
   './icon-512.svg',
   './icon-maskable-192.svg',
   './icon-maskable-512.svg',
-  // バックアップ/復元機能が初回オフラインでも使えるようJSZipも事前キャッシュする。
+];
+const OPTIONAL_EXTERNAL_ASSETS = [
   'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_VERSION)
-      .then((cache) => cache.addAll(CORE_ASSETS))
+      .then((cache) => cache.addAll(LOCAL_ASSETS))
+      .then(() => caches.open(CACHE_VERSION))
+      .then((cache) => Promise.all(
+        OPTIONAL_EXTERNAL_ASSETS.map((url) =>
+          cache.add(url).catch(() => {
+            // CDN障害でService Worker全体のインストールを失敗させない。
+          })
+        )
+      ))
       .then(() => self.skipWaiting())
   );
 });
@@ -55,7 +64,7 @@ self.addEventListener('fetch', (event) => {
       })
     );
   } else {
-    // CDN等の外部リソースはキャッシュ優先。オンラインなら更新版も保存する。
+    // CDN等の外部リソースはキャッシュ優先。オンラインなら未キャッシュ時に取得して保存する。
     event.respondWith(
       caches.match(req).then((cached) => {
         const fetchPromise = fetch(req).then((res) => {
