@@ -1,5 +1,5 @@
 // service-worker.js — オフラインでも基本機能が使えるようにするためのキャッシュ
-const CACHE_VERSION = 'choir-player-v2';
+const CACHE_VERSION = 'choir-player-v3';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -9,10 +9,10 @@ const CORE_ASSETS = [
   './audio.js',
   './player.js',
   './manifest.json',
-  './icons/icon-192.svg',
-  './icons/icon-512.svg',
-  './icons/icon-maskable-192.svg',
-  './icons/icon-maskable-512.svg',
+  './icon-192.svg',
+  './icon-512.svg',
+  './icon-maskable-192.svg',
+  './icon-maskable-512.svg',
 ];
 
 self.addEventListener('install', (event) => {
@@ -39,7 +39,6 @@ self.addEventListener('fetch', (event) => {
   const isSameOrigin = url.origin === self.location.origin;
 
   if (isSameOrigin) {
-    // アプリ本体：キャッシュ優先、なければネットワーク→キャッシュへ保存
     event.respondWith(
       caches.match(req).then((cached) => {
         if (cached) return cached;
@@ -51,8 +50,6 @@ self.addEventListener('fetch', (event) => {
       })
     );
   } else {
-    // 外部リソース（フォント・JSZipなど）：取得できたらキャッシュに保存しつつ返す。
-    // オフライン時はキャッシュがあればそれを使い、それ以外は失敗をそのまま伝える。
     event.respondWith(
       caches.match(req).then((cached) => {
         const fetchPromise = fetch(req).then((res) => {
