@@ -7,29 +7,48 @@
 <meta name="description" content="学校の合唱練習用。パートごとの音源を重ねて再生できるオフライン対応プレイヤー。" />
 <title>合唱練習プレイヤー</title>
 <link rel="manifest" href="manifest.json" />
-<link rel="icon" href="icons/icon-192.svg" />
-<link rel="apple-touch-icon" href="icons/icon-192.svg" />
-<script>
-(async () => {
-  const loader = document.createElement('p');
-  loader.textContent = '読み込み中…';
-  loader.style.cssText = 'font-family:system-ui,sans-serif;padding:2rem;text-align:center';
-  document.body.appendChild(loader);
-  try {
-    const files = ['part-00','part-01','part-02','part-03','part-04','part-05','part-06','part-07'];
-    const text = (await Promise.all(files.map(f => fetch(`bundle/${f}`, {cache:'no-store'}).then(r => {
-      if (!r.ok) throw new Error(`${f}: ${r.status}`);
-      return r.text();
-    })))).join('');
-    document.open();
-    document.write(text);
-    document.close();
-  } catch (err) {
-    console.error(err);
-    loader.textContent = 'アプリの読み込みに失敗しました。ページを再読み込みしてください。';
-  }
-})();
-</script>
+<link rel="icon" href="icon-192.png" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
 </head>
-<body></body>
-</html>
+<body>
+<div id="toastRegion" class="toast-region" role="status" aria-live="polite"></div>
+<div id="app">
+<header class="topbar">
+<button id="backBtn" class="icon-btn" hidden aria-label="戻る"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+<h1 id="pageTitle">🎼 合唱練習</h1>
+<div class="topbar-actions">
+<button id="searchToggleBtn" class="icon-btn" aria-label="検索"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><line x1="20" y1="20" x2="15.5" y2="15.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+<button id="themeToggleBtn" class="icon-btn" aria-label="テーマ切り替え">🌙</button>
+<button id="menuBtn" class="icon-btn" aria-label="メニュー" aria-haspopup="true" aria-expanded="false">⋮</button>
+</div>
+<div id="menuDropdown" class="dropdown" hidden role="menu"><button role="menuitem" id="menuExportBtn">📤 エクスポート（バックアップ）</button><button role="menuitem" id="menuImportBtn">📥 インポート（復元）</button><button role="menuitem" id="menuSettingsBtn">⚙️ 設定</button></div>
+</header>
+<div id="searchBar" class="search-bar" hidden><input id="searchInput" type="search" placeholder="曲名・音源名・パート名で検索" aria-label="検索" /></div>
+<main id="homeScreen" class="screen">
+<div class="home-actions"><button id="addSongBtn" class="btn-primary">＋ 曲を追加</button><select id="sortSelect" class="select-input" aria-label="並び替え"><option value="createdAt">追加日時順</option><option value="title">名前順</option></select></div>
+<h2 class="section-label">登録済みの曲</h2><ul id="songList" class="song-list"></ul><p id="emptyState" class="empty-state" hidden>まだ曲が登録されていません。「＋ 曲を追加」から始めましょう。</p>
+</main>
+<main id="songScreen" class="screen" hidden>
+<div class="song-header"><h2 id="songTitleEl" class="song-title"></h2><div class="song-header-actions"><button id="editSongBtn" class="icon-btn" aria-label="曲名を編集">✏️</button><button id="deleteSongBtn" class="icon-btn" aria-label="曲を削除">🗑️</button></div></div>
+<div id="resumeBanner" class="resume-banner" hidden><span id="resumeBannerText"></span><button id="resumeFromStartBtn" class="link-btn">最初から再生する</button></div>
+<section class="panel"><div class="panel-header"><h3>🎤 パートを選んで重ねる</h3><button id="addTrackBtn" class="btn-secondary">＋ 音源を追加</button></div><div class="track-toolbar"><select id="trackSortSelect" class="select-input" aria-label="音源の並び替え"><option value="manual">手動（ドラッグで並び替え）</option><option value="name">名前順</option><option value="part">パート順</option><option value="createdAt">追加日時順</option></select><div class="quick-actions"><button id="quickAllBtn" class="chip-btn">全体再生</button><button id="quickMuteBtn" class="chip-btn">全ミュート</button></div></div><ul id="trackList" class="track-list"></ul><p id="trackEmptyState" class="empty-state" hidden>まだ音源が登録されていません。「＋ 音源を追加」から登録しましょう。</p></section>
+<section class="panel"><div class="panel-header"><h3>⭐ プリセット</h3><button id="addPresetBtn" class="btn-secondary">＋ 新規プリセット</button></div><ul id="presetList" class="preset-list"></ul><p id="presetEmptyState" class="empty-state" hidden>音量の組み合わせをプリセットとして保存できます。</p></section>
+<section class="panel"><div class="panel-header"><h3>📝 メモ</h3><button id="addMemoBtn" class="btn-secondary">＋ メモを追加</button></div><ul id="memoList" class="memo-list"></ul><p id="memoEmptyState" class="empty-state" hidden>練習中に気づいたことをメモしておきましょう。</p></section>
+<div class="player-spacer" aria-hidden="true"></div>
+</main>
+<div id="playerBar" class="player-bar" hidden><div class="player-seek-row"><span id="currentTimeEl" class="time-label">0:00</span><input id="seekBar" type="range" min="0" max="0" step="0.1" value="0" class="seek-bar" aria-label="再生位置" /><span id="totalTimeEl" class="time-label">0:00</span></div><div class="player-controls-row"><button id="rateBtn" class="chip-btn" aria-label="再生速度">1x</button><button id="repeatBtn" class="chip-btn" aria-label="リピート">🔁</button><button id="back10Btn" class="icon-btn large" aria-label="10秒戻る">⏪10</button><button id="playBtn" class="play-btn" aria-label="再生">▶</button><button id="fwd10Btn" class="icon-btn large" aria-label="10秒進む">10⏩</button><button id="volumeBtn" class="chip-btn" aria-label="ミュート">🔊</button><button id="abBtn" class="chip-btn" aria-label="A-Bリピート地点を設定">A-B</button></div><div class="player-ab-row"><span id="abLabel" class="ab-label">A-Bリピート未設定</span><button id="abClearBtn" class="link-btn" hidden>解除</button></div></div>
+</div>
+<div id="modalOverlay" class="modal-overlay" hidden></div>
+<div id="songModal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="songModalTitle"><h3 id="songModalTitle">曲を追加</h3><label class="field-label" for="songTitleInput">曲名</label><input id="songTitleInput" type="text" class="text-input" placeholder="例：COSMOS" maxlength="100" /><div class="modal-actions"><button id="songModalCancelBtn" class="btn-secondary">キャンセル</button><button id="songModalSaveBtn" class="btn-primary">保存</button></div></div>
+<div id="trackModal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="trackModalTitle"><h3 id="trackModalTitle">音源を追加</h3><div id="trackFileField"><label class="field-label" for="trackFileInput">音声ファイル</label><input id="trackFileInput" type="file" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.webm" class="file-input" /><p id="trackFileName" class="file-name"></p></div><label class="field-label" for="trackNameInput">音源名</label><input id="trackNameInput" type="text" class="text-input" placeholder="例：アルト練習用" maxlength="60" /><label class="field-label" for="trackPartSelect">パート</label><select id="trackPartSelect" class="select-input"><option value="ソプラノ">ソプラノ</option><option value="アルト">アルト</option><option value="男声">男声</option><option value="全体">全体</option><option value="ピアノ伴奏">ピアノ伴奏</option><option value="その他">その他（自由入力）</option></select><input id="trackPartCustomInput" type="text" class="text-input" placeholder="パート名を入力" maxlength="30" hidden /><div class="modal-actions"><button id="trackModalCancelBtn" class="btn-secondary">キャンセル</button><button id="trackModalSaveBtn" class="btn-primary">保存</button></div></div>
+<div id="presetModal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="presetModalTitle"><h3 id="presetModalTitle">プリセット</h3><label class="field-label" for="presetNameInput">プリセット名</label><input id="presetNameInput" type="text" class="text-input" placeholder="例：アルト練習" maxlength="40" /><div id="presetSliders" class="preset-sliders"></div><div class="modal-actions"><button id="presetModalDeleteBtn" class="btn-danger" hidden>削除</button><button id="presetModalCancelBtn" class="btn-secondary">キャンセル</button><button id="presetModalSaveBtn" class="btn-primary">保存</button></div></div>
+<div id="memoModal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="memoModalTitle"><h3 id="memoModalTitle">メモを追加</h3><label class="checkbox-label"><input id="memoTimeCheckbox" type="checkbox" />再生位置と関連付ける（<span id="memoTimeValue">0:00</span>）</label><label class="field-label" for="memoTextInput">内容</label><textarea id="memoTextInput" class="text-input textarea" rows="3" placeholder="例：ここは弱く"></textarea><div class="modal-actions"><button id="memoModalDeleteBtn" class="btn-danger" hidden>削除</button><button id="memoModalCancelBtn" class="btn-secondary">キャンセル</button><button id="memoModalSaveBtn" class="btn-primary">保存</button></div></div>
+<div id="confirmModal" class="modal small" hidden role="alertdialog" aria-modal="true" aria-labelledby="confirmModalTitle"><h3 id="confirmModalTitle">確認</h3><p id="confirmModalBody"></p><div class="modal-actions"><button id="confirmModalCancelBtn" class="btn-secondary">キャンセル</button><button id="confirmModalOkBtn" class="btn-danger">削除する</button></div></div>
+<div id="settingsModal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle"><h3 id="settingsModalTitle">設定</h3><label class="field-label" for="themeSelect">テーマ</label><select id="themeSelect" class="select-input"><option value="auto">端末の設定に合わせる</option><option value="light">ライト</option><option value="dark">ダーク</option></select><label class="field-label" for="defaultRateSelect">既定の再生速度</label><select id="defaultRateSelect" class="select-input"><option value="0.5">0.5x</option><option value="0.75">0.75x</option><option value="1">1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="2">2x</option></select><div class="modal-actions"><button id="settingsModalCloseBtn" class="btn-primary">閉じる</button></div></div>
+<div id="importModal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="importModalTitle"><h3 id="importModalTitle">バックアップから復元</h3><p class="modal-desc">エクスポートした <code>.zip</code> ファイルを選択してください。曲・音源・メモ・プリセットと音声データがまとめて復元されます。</p><label class="field-label" for="importZipInput">バックアップファイル（.zip）</label><input id="importZipInput" type="file" accept=".zip,application/zip" class="file-input" /><p id="importStatus" class="file-name"></p><div class="modal-actions"><button id="importModalCancelBtn" class="btn-secondary">キャンセル</button><button id="importModalRunBtn" class="btn-primary">復元する</button></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script><script src="db.js"></script><script src="audio.js"></script><script src="player.js"></script><script src="app.js"></script>
+</body></html>
