@@ -68,7 +68,11 @@
   const clickCancelForOpenModal = () => {
     const modal = getOpenModal();
     if (!modal) return false;
-    const cancel = modal.querySelector('.btn-secondary');
+
+    // 通常のモーダルは「キャンセル」を優先する。
+    // 設定モーダルだけは「閉じる」がprimaryボタンなのでフォールバックする。
+    const cancel = modal.querySelector('.btn-secondary')
+      || (modal.id === 'settingsModal' ? modal.querySelector('.btn-primary') : null);
     if (!cancel) return false;
     cancel.click();
     return true;
