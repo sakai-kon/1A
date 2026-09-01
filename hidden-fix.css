@@ -1,4 +1,22 @@
-/* Fix: elements using the HTML hidden attribute must remain hidden even when component CSS sets display. */
+/* HTMLのhidden属性をコンポーネントCSSより優先させる。 */
 [hidden] {
   display: none !important;
+}
+
+/* モーダルはオーバーレイより必ず前面に置き、ボタンを確実にクリック可能にする。 */
+.modal-overlay:not([hidden]) {
+  z-index: 1000 !important;
+  pointer-events: auto;
+}
+
+.modal:not([hidden]) {
+  z-index: 1001 !important;
+  pointer-events: auto !important;
+}
+
+.modal:not([hidden]) button,
+.modal:not([hidden]) input,
+.modal:not([hidden]) select,
+.modal:not([hidden]) textarea {
+  pointer-events: auto;
 }
