@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#2B3A55" />
+<meta name="description" content="学校の合唱練習用。パートごとの音源を重ねて再生できるオフライン対応プレイヤー。" />
+<title>合唱練習プレイヤー</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icons/icon-192.svg" />
+<link rel="apple-touch-icon" href="icons/icon-192.svg" />
+<script>
+(async () => {
+  const loader = document.createElement('p');
+  loader.textContent = '読み込み中…';
+  loader.style.cssText = 'font-family:system-ui,sans-serif;padding:2rem;text-align:center';
+  document.body.appendChild(loader);
+  try {
+    const files = ['part-00','part-01','part-02','part-03','part-04','part-05','part-06','part-07'];
+    const text = (await Promise.all(files.map(f => fetch(`bundle/${f}`, {cache:'no-store'}).then(r => {
+      if (!r.ok) throw new Error(`${f}: ${r.status}`);
+      return r.text();
+    })))).join('');
+    document.open();
+    document.write(text);
+    document.close();
+  } catch (err) {
+    console.error(err);
+    loader.textContent = 'アプリの読み込みに失敗しました。ページを再読み込みしてください。';
+  }
+})();
+</script>
+</head>
+<body></body>
+</html>
